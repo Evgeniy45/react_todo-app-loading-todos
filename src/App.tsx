@@ -6,42 +6,39 @@ import { UserWarning } from './UserWarning';
 import { getTodos, USER_ID } from './api/todos';
 import { Todo } from './types/Todo';
 import classNames from 'classnames';
+import { FilterType } from './types/FilterType';
+import { ErrorMessage } from './types/ErrorMessage';
+
+function getFilteredTodos(todosToFilter: Todo[], filter: FilterType) {
+  switch (filter) {
+    case FilterType.Active:
+      return todosToFilter.filter(todo => !todo.completed);
+    case FilterType.Completed:
+      return todosToFilter.filter(todo => todo.completed);
+    default:
+      return todosToFilter;
+  }
+}
 
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [filterBy, setFilterBy] = useState<'all' | 'active' | 'completed'>(
-    'all',
-  );
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [filterBy, setFilterBy] = useState<FilterType>(FilterType.All);
+  const [errorMessage, setErrorMessage] = useState<ErrorMessage | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
-
-  function getFilteredTodos(
-    todosToFilter: Todo[],
-    filter: 'all' | 'active' | 'completed',
-  ) {
-    switch (filter) {
-      case 'active':
-        return todosToFilter.filter(todo => !todo.completed);
-      case 'completed':
-        return todosToFilter.filter(todo => todo.completed);
-      default:
-        return todosToFilter;
-    }
-  }
 
   const filteredTodos = getFilteredTodos(todos, filterBy);
 
   useEffect(() => {
     setIsLoading(true);
-    setErrorMessage('');
+    setErrorMessage(null);
     getTodos()
       .then(currentTodos => setTodos(currentTodos))
       .catch(() => {
-        setErrorMessage('Unable to load todos');
+        setErrorMessage(ErrorMessage.UnableToLoadTodos);
         setTimeout(() => {
-          setErrorMessage('');
+          setErrorMessage(null);
         }, 3000);
       })
       .finally(() => {
@@ -151,10 +148,10 @@ export const App: React.FC = () => {
                 <a
                   href="#/"
                   className={classNames('filter__link', {
-                    selected: filterBy === 'all',
+                    selected: filterBy === FilterType.All,
                   })}
                   data-cy="FilterLinkAll"
-                  onClick={() => setFilterBy('all')}
+                  onClick={() => setFilterBy(FilterType.All)}
                 >
                   All
                 </a>
@@ -162,9 +159,9 @@ export const App: React.FC = () => {
                 <a
                   href="#/active"
                   className={classNames('filter__link', {
-                    selected: filterBy === 'active',
+                    selected: filterBy === FilterType.Active,
                   })}
-                  onClick={() => setFilterBy('active')}
+                  onClick={() => setFilterBy(FilterType.Active)}
                   data-cy="FilterLinkActive"
                 >
                   Active
@@ -173,9 +170,9 @@ export const App: React.FC = () => {
                 <a
                   href="#/completed"
                   className={classNames('filter__link', {
-                    selected: filterBy === 'completed',
+                    selected: filterBy === FilterType.Completed,
                   })}
-                  onClick={() => setFilterBy('completed')}
+                  onClick={() => setFilterBy(FilterType.Completed)}
                   data-cy="FilterLinkCompleted"
                 >
                   Completed
@@ -203,14 +200,14 @@ export const App: React.FC = () => {
           'is-danger',
           'is-light',
           'has-text-weight-normal',
-          { hidden: errorMessage === '' },
+          { hidden: errorMessage === null },
         )}
       >
         <button
           data-cy="HideErrorButton"
           type="button"
           className="delete"
-          onClick={() => setErrorMessage('')}
+          onClick={() => setErrorMessage(null)}
         />
         {errorMessage}
       </div>
